@@ -2,37 +2,35 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Animated Login</title>
+    <title>Multi-Auth Login</title>
     <style>
-        body { font-family: 'Segoe UI', Tahoma, sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; background-color: #f0f2f5; margin: 0; }
-        .card { background: white; padding: 2.5rem; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); width: 320px; text-align: center; }
-        h2 { color: #333; margin-bottom: 1.5rem; }
-        input { width: 100%; padding: 12px; margin: 10px 0; border: 2px solid #eee; border-radius: 8px; box-sizing: border-box; transition: 0.3s; }
-        input:focus { border-color: #4a90e2; outline: none; }
-        button { width: 100%; padding: 12px; border: none; border-radius: 8px; background: #4a90e2; color: white; cursor: pointer; transition: 0.3s; font-weight: bold; }
-        button:hover { background: #357abd; transform: translateY(-3px); }
-        #otp-section { margin-top: 15px; opacity: 0; transition: opacity 0.5s ease-in; }
-        #recaptcha-container { margin-bottom: 15px; display: flex; justify-content: center; }
+        body { font-family: sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; background: #f0f2f5; }
+        .card { background: white; padding: 2rem; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); width: 320px; text-align: center; }
+        input { width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #ddd; border-radius: 5px; }
+        button { width: 100%; padding: 10px; margin: 5px 0; border: none; border-radius: 5px; cursor: pointer; color: white; }
+        .phone-btn { background: #4a90e2; }
+        .google-btn { background: #db4437; }
+        #recaptcha-container { margin-bottom: 10px; }
     </style>
 </head>
 <body>
 
 <div class="card">
-    <h2>Welcome</h2>
+    <h2>Login</h2>
+    
+    <button class="google-btn" id="google-login">Sign in with Google</button>
+    <hr>
+    
     <div id="recaptcha-container"></div>
-    <input type="tel" id="phone" placeholder="Phone: +91XXXXXXXXXX">
-    <button id="send-otp">Send OTP</button>
-
-    <div id="otp-section">
-        <input type="text" id="otp" placeholder="Enter 6-digit OTP">
-        <button id="verify-otp">Verify</button>
-    </div>
+    <input type="tel" id="phone" placeholder="+91XXXXXXXXXX">
+    <button class="phone-btn" id="send-otp">Send OTP</button>
+    <input type="text" id="otp" placeholder="Enter OTP">
+    <button class="phone-btn" id="verify-otp">Verify OTP</button>
 </div>
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
-    import { getAuth, RecaptchaVerifier, signInWithPhoneNumber } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
+    import { getAuth, signInWithPopup, GoogleAuthProvider, RecaptchaVerifier, signInWithPhoneNumber } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
 
     const firebaseConfig = {
         apiKey: "AIzaSyDvwpPrqEvOM59FuLwbPF0Zo-o6xlftoJE",
@@ -46,28 +44,29 @@
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
 
-    // FIX: Passing the DOM element directly
-    window.recaptchaVerifier = new RecaptchaVerifier(auth, document.getElementById('recaptcha-container'), {
-        'size': 'normal'
+    // 1. Google Auth Logic
+    document.getElementById('google-login').addEventListener('click', () => {
+        const provider = new GoogleAuthProvider();
+        signInWithPopup(auth, provider)
+            .then((result) => alert("Google Login Successful: " + result.user.email))
+            .catch((err) => alert("Error: " + err.message));
     });
 
+    // 2. Phone Auth Logic (Fixed)
+    window.recaptchaVerifier = new RecaptchaVerifier(auth, document.getElementById('recaptcha-container'), { 'size': 'normal' });
+    
     document.getElementById('send-otp').addEventListener('click', () => {
         const phone = document.getElementById('phone').value;
         signInWithPhoneNumber(auth, phone, window.recaptchaVerifier)
             .then((res) => {
                 window.confirmationResult = res;
-                document.getElementById('otp-section').style.opacity = '1';
-                alert("OTP Sent! Check your phone.");
-            }).catch(err => {
-                console.error(err);
-                alert("Error: " + err.message);
-            });
+                alert("OTP Sent!");
+            }).catch(err => alert("Error: " + err.message));
     });
 
     document.getElementById('verify-otp').addEventListener('click', () => {
-        const code = document.getElementById('otp').value;
-        window.confirmationResult.confirm(code)
-            .then(() => alert("Login Successful!"))
+        window.confirmationResult.confirm(document.getElementById('otp').value)
+            .then(() => alert("Phone Login Successful!"))
             .catch(() => alert("Invalid OTP!"));
     });
 </script>
