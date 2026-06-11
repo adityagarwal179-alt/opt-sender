@@ -1,24 +1,30 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Animated Login</title>
     <style>
-        body { font-family: sans-serif; display: flex; justify-content: center; padding-top: 50px; background-color: #f4f7f6; }
-        .card { background: white; padding: 2rem; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); width: 300px; }
-        input { width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; }
-        button { width: 100%; padding: 10px; border: none; border-radius: 6px; background: #4a90e2; color: white; cursor: pointer; transition: 0.3s; }
-        button:hover { background: #357abd; transform: translateY(-2px); }
-        #recaptcha-container { margin-bottom: 10px; }
+        body { font-family: 'Segoe UI', Tahoma, sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; background-color: #f0f2f5; margin: 0; }
+        .card { background: white; padding: 2.5rem; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); width: 320px; text-align: center; }
+        h2 { color: #333; margin-bottom: 1.5rem; }
+        input { width: 100%; padding: 12px; margin: 10px 0; border: 2px solid #eee; border-radius: 8px; box-sizing: border-box; transition: 0.3s; }
+        input:focus { border-color: #4a90e2; outline: none; }
+        button { width: 100%; padding: 12px; border: none; border-radius: 8px; background: #4a90e2; color: white; cursor: pointer; transition: 0.3s; font-weight: bold; }
+        button:hover { background: #357abd; transform: translateY(-3px); }
+        #otp-section { margin-top: 15px; opacity: 0; transition: opacity 0.5s ease-in; }
+        #recaptcha-container { margin-bottom: 15px; display: flex; justify-content: center; }
     </style>
 </head>
 <body>
 
 <div class="card">
-    <h2>Login</h2>
+    <h2>Welcome</h2>
     <div id="recaptcha-container"></div>
-    <input type="tel" id="phone" placeholder="+91XXXXXXXXXX">
+    <input type="tel" id="phone" placeholder="Phone: +91XXXXXXXXXX">
     <button id="send-otp">Send OTP</button>
 
-    <div id="otp-section" style="display:none; margin-top: 15px;">
+    <div id="otp-section">
         <input type="text" id="otp" placeholder="Enter 6-digit OTP">
         <button id="verify-otp">Verify</button>
     </div>
@@ -37,21 +43,30 @@
         appId: "1:737023736893:web:0c73126bcd596ebb61fe54"
     };
 
-    const auth = getAuth(initializeApp(firebaseConfig));
-    window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', { 'size': 'normal' });
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+
+    // FIX: Passing the DOM element directly
+    window.recaptchaVerifier = new RecaptchaVerifier(auth, document.getElementById('recaptcha-container'), {
+        'size': 'normal'
+    });
 
     document.getElementById('send-otp').addEventListener('click', () => {
         const phone = document.getElementById('phone').value;
         signInWithPhoneNumber(auth, phone, window.recaptchaVerifier)
             .then((res) => {
                 window.confirmationResult = res;
-                document.getElementById('otp-section').style.display = 'block';
-                alert("OTP Sent!");
-            }).catch(err => alert("Error: " + err.message));
+                document.getElementById('otp-section').style.opacity = '1';
+                alert("OTP Sent! Check your phone.");
+            }).catch(err => {
+                console.error(err);
+                alert("Error: " + err.message);
+            });
     });
 
     document.getElementById('verify-otp').addEventListener('click', () => {
-        window.confirmationResult.confirm(document.getElementById('otp').value)
+        const code = document.getElementById('otp').value;
+        window.confirmationResult.confirm(code)
             .then(() => alert("Login Successful!"))
             .catch(() => alert("Invalid OTP!"));
     });
