@@ -1,59 +1,68 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Phone Authentication</title>
+</head>
 <body>
-    <h2>Login with Phone Number</h2>
+
+    <h2>Sign In with Phone</h2>
+    
     <div id="recaptcha-container"></div>
+    
+    <br>
     <input type="tel" id="phone" placeholder="+91XXXXXXXXXX">
     <button id="send-otp">Send OTP</button>
 
+    <br><br>
     <input type="text" id="otp" placeholder="Enter OTP">
-    <button id="verify-otp">Verify</button>
+    <button id="verify-otp">Verify OTP</button>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
         import { getAuth, RecaptchaVerifier, signInWithPhoneNumber } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
 
-        const firebaseConfig = {// Import the functions you need from the SDKs you need
-import { initializeApp } from "firebase/app";
-import { getAnalytics } from "firebase/analytics";
-// TODO: Add SDKs for Firebase products that you want to use
-// https://firebase.google.com/docs/web/setup#available-libraries
+        // Your Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyDvwpPrqEvOM59FuLwbPF0Zo-o6xlftoJE",
+            authDomain: "otp-login-test-baa19.firebaseapp.com",
+            projectId: "otp-login-test-baa19",
+            storageBucket: "otp-login-test-baa19.firebasestorage.app",
+            messagingSenderId: "737023736893",
+            appId: "1:737023736893:web:0c73126bcd596ebb61fe54"
+        };
 
-// Your web app's Firebase configuration
-// For Firebase JS SDK v7.20.0 and later, measurementId is optional
-const firebaseConfig = {
-  apiKey: "AIzaSyDvwpPrqEvOM59FuLwbPF0Zo-o6xlftoJE",
-  authDomain: "otp-login-test-baa19.firebaseapp.com",
-  projectId: "otp-login-test-baa19",
-  storageBucket: "otp-login-test-baa19.firebasestorage.app",
-  messagingSenderId: "737023736893",
-  appId: "1:737023736893:web:0c73126bcd596ebb61fe54",
-  measurementId: "G-FM03NB0VN2"
-};
-
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
-const analytics = getAnalytics(app);};
         const app = initializeApp(firebaseConfig);
-        const auth = getAuth();
+        const auth = getAuth(app);
 
-        // reCAPTCHA सेटअप (लाइव के लिए जरूरी)
-        window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', { 'size': 'normal' });
+        // Initialize reCAPTCHA verifier
+        window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
+            'size': 'normal' // You can change this to 'invisible' for a cleaner UI
+        });
 
+        // 1. Send OTP Logic
         document.getElementById('send-otp').addEventListener('click', () => {
             const phoneNumber = document.getElementById('phone').value;
             signInWithPhoneNumber(auth, phoneNumber, window.recaptchaVerifier)
                 .then((confirmationResult) => {
                     window.confirmationResult = confirmationResult;
-                    alert("OTP भेजा गया!");
-                }).catch((error) => console.log(error));
+                    alert("OTP has been sent to your phone!");
+                }).catch((error) => {
+                    console.error("Error sending OTP:", error);
+                    alert("Failed to send OTP. Check console for details.");
+                });
         });
 
+        // 2. Verify OTP Logic
         document.getElementById('verify-otp').addEventListener('click', () => {
             const code = document.getElementById('otp').value;
             window.confirmationResult.confirm(code).then((result) => {
-                alert("सफलतापूर्वक लॉग इन हो गया!");
-            }).catch((error) => alert("गलत OTP!"));
+                alert("Successfully logged in!");
+                const user = result.user;
+                console.log("User details:", user);
+            }).catch((error) => {
+                alert("Invalid or expired OTP.");
+            });
         });
     </script>
 </body>
