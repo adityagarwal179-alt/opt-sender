@@ -1,69 +1,60 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>Phone Authentication</title>
+    <style>
+        body { font-family: sans-serif; display: flex; justify-content: center; padding-top: 50px; background-color: #f4f7f6; }
+        .card { background: white; padding: 2rem; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); width: 300px; }
+        input { width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; }
+        button { width: 100%; padding: 10px; border: none; border-radius: 6px; background: #4a90e2; color: white; cursor: pointer; transition: 0.3s; }
+        button:hover { background: #357abd; transform: translateY(-2px); }
+        #recaptcha-container { margin-bottom: 10px; }
+    </style>
 </head>
 <body>
 
-    <h2>Sign In with Phone</h2>
-    
+<div class="card">
+    <h2>Login</h2>
     <div id="recaptcha-container"></div>
-    
-    <br>
     <input type="tel" id="phone" placeholder="+91XXXXXXXXXX">
     <button id="send-otp">Send OTP</button>
 
-    <br><br>
-    <input type="text" id="otp" placeholder="Enter OTP">
-    <button id="verify-otp">Verify OTP</button>
+    <div id="otp-section" style="display:none; margin-top: 15px;">
+        <input type="text" id="otp" placeholder="Enter 6-digit OTP">
+        <button id="verify-otp">Verify</button>
+    </div>
+</div>
 
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
-        import { getAuth, RecaptchaVerifier, signInWithPhoneNumber } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
+    import { getAuth, RecaptchaVerifier, signInWithPhoneNumber } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
 
-        // Your Firebase configuration
-        const firebaseConfig = {
-            apiKey: "AIzaSyDvwpPrqEvOM59FuLwbPF0Zo-o6xlftoJE",
-            authDomain: "otp-login-test-baa19.firebaseapp.com",
-            projectId: "otp-login-test-baa19",
-            storageBucket: "otp-login-test-baa19.firebasestorage.app",
-            messagingSenderId: "737023736893",
-            appId: "1:737023736893:web:0c73126bcd596ebb61fe54"
-        };
+    const firebaseConfig = {
+        apiKey: "AIzaSyDvwpPrqEvOM59FuLwbPF0Zo-o6xlftoJE",
+        authDomain: "otp-login-test-baa19.firebaseapp.com",
+        projectId: "otp-login-test-baa19",
+        storageBucket: "otp-login-test-baa19.firebasestorage.app",
+        messagingSenderId: "737023736893",
+        appId: "1:737023736893:web:0c73126bcd596ebb61fe54"
+    };
 
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
+    const auth = getAuth(initializeApp(firebaseConfig));
+    window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', { 'size': 'normal' });
 
-        // Initialize reCAPTCHA verifier
-        window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
-            'size': 'normal' // You can change this to 'invisible' for a cleaner UI
-        });
+    document.getElementById('send-otp').addEventListener('click', () => {
+        const phone = document.getElementById('phone').value;
+        signInWithPhoneNumber(auth, phone, window.recaptchaVerifier)
+            .then((res) => {
+                window.confirmationResult = res;
+                document.getElementById('otp-section').style.display = 'block';
+                alert("OTP Sent!");
+            }).catch(err => alert("Error: " + err.message));
+    });
 
-        // 1. Send OTP Logic
-        document.getElementById('send-otp').addEventListener('click', () => {
-            const phoneNumber = document.getElementById('phone').value;
-            signInWithPhoneNumber(auth, phoneNumber, window.recaptchaVerifier)
-                .then((confirmationResult) => {
-                    window.confirmationResult = confirmationResult;
-                    alert("OTP has been sent to your phone!");
-                }).catch((error) => {
-                    console.error("Error sending OTP:", error);
-                    alert("Failed to send OTP. Check console for details.");
-                });
-        });
-
-        // 2. Verify OTP Logic
-        document.getElementById('verify-otp').addEventListener('click', () => {
-            const code = document.getElementById('otp').value;
-            window.confirmationResult.confirm(code).then((result) => {
-                alert("Successfully logged in!");
-                const user = result.user;
-                console.log("User details:", user);
-            }).catch((error) => {
-                alert("Invalid or expired OTP.");
-            });
-        });
-    </script>
+    document.getElementById('verify-otp').addEventListener('click', () => {
+        window.confirmationResult.confirm(document.getElementById('otp').value)
+            .then(() => alert("Login Successful!"))
+            .catch(() => alert("Invalid OTP!"));
+    });
+</script>
 </body>
 </html>
